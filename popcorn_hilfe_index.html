@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Popcornschachtel Gestufte Hilfen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&family=DM+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --red: #E24B4A; --red-dark: #791F1F; --red-light: #FCEBEB;
+  --green: #1D9E75; --green-dark: #085041; --green-light: #E1F5EE;
+  --amber: #BA7517; --amber-light: #FAEEDA;
+  --gray-50: #F8F7F4; --gray-100: #EDEBE4; --gray-300: #C4C2BA;
+  --gray-500: #888780; --gray-700: #444441; --gray-900: #1A1A18;
+  --font-body: 'DM Sans', sans-serif;
+  --font-display: 'DM Serif Display', serif;
+  --font-mono: 'DM Mono', monospace;
+  --radius: 10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  font-family: var(--font-body);
+  background: var(--gray-50);
+  color: var(--gray-900);
+  min-height: 100vh;
+  padding: 0;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--red);
+  color: white;
+  padding: 1.5rem 2rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.header-icon {
+  width: 48px; height: 48px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+.header-title { font-family: var(--font-display); font-size: 1.6rem; line-height: 1.1; }
+.header-sub { font-size: 13px; opacity: .8; margin-top: 3px; }
+
+/* ── Task nav ── */
+.task-nav {
+  display: flex;
+  background: white;
+  border-bottom: 1px solid var(--gray-100);
+  overflow-x: auto;
+}
+.tnav-btn {
+  flex: 1; min-width: 80px;
+  padding: 14px 8px 12px;
+  border: none; background: none; cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 12px; font-weight: 500;
+  color: var(--gray-500);
+  border-bottom: 3px solid transparent;
+  transition: all .15s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  position: relative;
+}
+.tnav-btn .letter {
+  font-family: var(--font-display);
+  font-size: 20px; line-height: 1;
+  color: var(--gray-300);
+  transition: color .15s;
+}
+.tnav-btn.active { color: var(--red); border-bottom-color: var(--red); }
+.tnav-btn.active .letter { color: var(--red); }
+.tnav-btn.locked { cursor: not-allowed; opacity: .5; }
+.tnav-btn .lock-icon { position: absolute; top: 8px; right: 12px; font-size: 10px; color: var(--gray-300); }
+
+/* ── Main ── */
+.main { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+/* ── Task panels ── */
+.task-panel { display: none; }
+.task-panel.active { display: block; animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ── Cards ── */
+.card {
+  background: white;
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.card-title { font-size: 15px; font-weight: 500; margin-bottom: .4rem; }
+.card-desc { font-size: 14px; color: var(--gray-500); line-height: 1.65; margin-bottom: 1.1rem; }
+
+/* ── Hint steps ── */
+.hint-list { display: flex; flex-direction: column; gap: 0; }
+.hint-item {
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.hint-locked {
+  background: var(--gray-50);
+  border-style: dashed;
+  opacity: .55;
+}
+.hint-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .1s;
+}
+.hint-header:hover { background: var(--gray-50); }
+.hint-locked .hint-header { cursor: not-allowed; }
+.hint-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--green-light); color: var(--green-dark);
+  font-size: 12px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.hint-locked .hint-num { background: var(--gray-100); color: var(--gray-500); }
+.hint-title-wrap { flex: 1; }
+.hint-title { font-size: 13px; font-weight: 500; }
+.hint-subtitle { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+.hint-chevron { font-size: 14px; color: var(--gray-300); transition: transform .2s; }
+.hint-chevron.open { transform: rotate(180deg); }
+
+.hint-body { display: none; padding: 0 14px 14px 54px; }
+.hint-body.open { display: block; }
+.hint-text { font-size: 13px; color: var(--gray-700); line-height: 1.65; margin-bottom: 8px; }
+.math-block {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  line-height: 1.75;
+  color: var(--gray-900);
+  white-space: pre-wrap;
+}
+.reveal-answer {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--gray-100);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--gray-500);
+  font-family: var(--font-body);
+  margin-top: 6px;
+  transition: all .1s;
+}
+.reveal-answer:hover { background: var(--gray-50); }
+.answer-box {
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: var(--green-light);
+  border-left: 3px solid var(--green);
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  color: var(--green-dark);
+  line-height: 1.65;
+  display: none;
+}
+.answer-box.show { display: block; }
+
+/* ── Unlock button ── */
+.unlock-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px;
+  background: var(--red); color: white;
+  border: none; border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14px; font-weight: 500;
+  margin-top: 1.25rem;
+  transition: background .15s, transform .1s;
+}
+.unlock-btn:hover { background: var(--red-dark); }
+.unlock-btn:active { transform: scale(.98); }
+.unlock-btn:disabled { background: var(--gray-300); cursor: not-allowed; transform: none; }
+
+/* ── Check input ── */
+.check-section { margin-top: 1rem; border-top: 1px solid var(--gray-100); padding-top: 1rem; }
+.check-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.check-row label { font-size: 13px; color: var(--gray-500); min-width: 140px; }
+.check-row input {
+  width: 100px; padding: 7px 10px;
+  border: 1px solid var(--gray-100); border-radius: 6px;
+  font-family: var(--font-body); font-size: 14px;
+  background: white; color: var(--gray-900);
+}
+.check-row input:focus { outline: none; border-color: var(--green); }
+.check-btn {
+  padding: 8px 20px;
+  border: 1px solid var(--gray-100); border-radius: 6px;
+  background: white; cursor: pointer;
+  font-family: var(--font-body); font-size: 13px;
+  transition: all .1s;
+}
+.check-btn:hover { background: var(--gray-50); }
+.feedback {
+  margin-top: 10px; padding: 9px 12px;
+  border-radius: 6px; font-size: 13px; line-height: 1.5;
+  display: none;
+}
+.feedback.show { display: block; }
+.feedback.ok { background: var(--green-light); color: var(--green-dark); border: 1px solid #5DCAA5; }
+.feedback.no { background: var(--red-light); color: var(--red-dark); border: 1px solid #F09595; }
+.feedback.part { background: var(--amber-light); color: var(--amber); border: 1px solid #EF9F27; }
+
+/* ── Progress bar ── */
+.progress-bar {
+  height: 4px; background: var(--gray-100);
+  border-radius: 2px; margin-bottom: 1.25rem; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--red);
+  border-radius: 2px; transition: width .4s ease;
+}
+
+/* ── Chart ── */
+.chart-wrap { position: relative; width: 100%; height: 240px; margin-top: 1rem; }
+.slider-row { display: flex; align-items: center; gap: 12px; margin-top: .75rem; }
+.slider-row label { font-size: 13px; color: var(--gray-500); min-width: 40px; }
+.slider-row input[type=range] { flex: 1; accent-color: var(--green); }
+.sval { font-size: 14px; font-weight: 500; min-width: 60px; }
+.metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: .75rem; }
+.metric { background: var(--gray-50); border-radius: 8px; padding: .6rem .75rem; }
+.metric-label { font-size: 11px; color: var(--gray-500); margin-bottom: 3px; }
+.metric-val { font-size: 18px; font-weight: 500; }
+.metric-val.hi { color: var(--green-dark); }
+
+/* ── Completion badge ── */
+.complete-badge {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--green-light); border: 1px solid #5DCAA5;
+  border-radius: var(--radius); padding: 12px 16px;
+  font-size: 14px; color: var(--green-dark); font-weight: 500;
+  margin-top: 1.25rem;
+}
+
+/* ── Next task btn ── */
+.next-task-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 13px;
+  background: var(--green); color: white;
+  border: none; border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14px; font-weight: 500;
+  margin-top: 1rem;
+  transition: background .15s;
+}
+.next-task-btn:hover { background: var(--green-dark); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🍿</div>
+  <div>
+    <div class="header-title">Die perfekte Popcornschachtel</div>
+    <div class="header-sub">Streifen 40 cm × 7 cm &nbsp;·&nbsp; Gestufte Hilfen</div>
+  </div>
+</div>
+
+<div class="task-nav">
+  <button class="tnav-btn active" id="nav0" onclick="goTask(0)">
+    <span class="letter">1</span>
+    <span>Bedingungen</span>
+  </button>
+  <button class="tnav-btn locked" id="nav1" onclick="goTask(1)">
+    <span class="letter">2</span>
+    <span>Funktion</span>
+    <i class="ti ti-lock lock-icon"></i>
+  </button>
+  <button class="tnav-btn locked" id="nav2" onclick="goTask(2)">
+    <span class="letter">3</span>
+    <span>Scheitelpunkt</span>
+    <i class="ti ti-lock lock-icon"></i>
+  </button>
+  <button class="tnav-btn locked" id="nav3" onclick="goTask(3)">
+    <span class="letter">4</span>
+    <span>Graph</span>
+    <i class="ti ti-lock lock-icon"></i>
+  </button>
+</div>
+
+<div class="main">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <!-- ══════════ TASK A ══════════ -->
+  <div class="task-panel active" id="panel0">
+    <div class="card">
+      <div class="card-title">1 Neben- und Hauptbedingung aufstellen</div>
+      <div class="card-desc">Der Papierstreifen (40 cm × 7 cm) wird zu einem Rechteckrahmen geformt er bildet die vier Seitenwände. Stelle die Bedingungen für Umfang und Volumen auf.</div>
+
+      <div class="hint-list">
+        <div class="hint-item" id="a1">
+          <div class="hint-header" onclick="openHint('a1')">
+            <div class="hint-num">1</div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Wofür steht die Länge des Streifens mathematisch?</div>
+              <div class="hint-subtitle">Stelle eine Formel auf</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_a1"></i>
+          </div>
+          <div class="hint-body" id="body_a1">
+            <div class="hint-text">Die Länge des Streifens entspricht dem <strong>Umfang der Grundfläche</strong>. Die Grundfläche ist ein Rechteck mit den Seiten x und y.</div>
+            <div class="math-block">U = 2·x + 2·y = 40 cm</div>
+          </div>
+        </div>
+
+        <div class="hint-item hint-locked" id="a2">
+          <div class="hint-header" onclick="openHint('a2')">
+            <div class="hint-num">2</div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Vereinfache die Nebenbedingung</div>
+              <div class="hint-subtitle">Stelle die Formel nach einer Variablen um</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_a2"></i>
+          </div>
+          <div class="hint-body" id="body_a2">
+            <div class="hint-text">Teile die Gleichung durch 2 und löse nach y auf:</div>
+            <div class="math-block">x + y = 20  →  y = 20 − x</div>
+            <div class="hint-text" style="margin-top:6px">Das ist die <strong>Nebenbedingung</strong>.</div>
+          </div>
+        </div>
+
+        <div class="hint-item hint-locked" id="a3">
+          <div class="hint-header" onclick="openHint('a3')">
+            <div class="hint-num">3</div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Hauptbedingung aufstellen</div>
+              <div class="hint-subtitle">Was soll maximiert werden?</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_a3"></i>
+          </div>
+          <div class="hint-body" id="body_a3">
+            <div class="hint-text">Das Volumen des Quaders soll maximal sein. Die Höhe h ist durch die Breite des Streifens fest vorgegeben: <strong>h = 7 cm</strong>.</div>
+            <div class="math-block">V = x · y · h = x · y · 7</div>
+            <div class="hint-text" style="margin-top:6px">Einsetzen der Nebenbedingung y = 20 − x:</div>
+            <div class="math-block">V(x) = 7 · x · (20 − x)    mit  0 &lt; x &lt; 20</div>
+            <div class="hint-text" style="margin-top:6px">Das ist die <strong>Hauptbedingung</strong>.</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="unlock-btn" id="unlockA" onclick="unlockNext(0)" disabled>
+        <i class="ti ti-lock"></i> Alle Schritte öffnen, um Aufgabe 2 freizuschalten
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ TASK B ══════════ -->
+  <div class="task-panel" id="panel1">
+    <div class="card">
+      <div class="card-title">2 Quadratische Funktionsgleichung berechnen</div>
+      <div class="card-desc">Multipliziere V(x) = 7·x·(20−x) aus und schreibe die Funktion in der Form V(x) = a·x² + b·x.</div>
+
+      <div class="hint-list">
+        <div class="hint-item" id="b1">
+          <div class="hint-header" onclick="openHint('b1')">
+            <div class="hint-num">1</div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Klammer ausmultiplizieren</div>
+              <div class="hint-subtitle">Schritt für Schritt</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_b1"></i>
+          </div>
+          <div class="hint-body" id="body_b1">
+            <div class="hint-text">Multipliziere zuerst x in die Klammer:</div>
+            <div class="math-block">7 · x · (20 − x) = 7 · (20x − x²)</div>
+          </div>
+        </div>
+
+        <div class="hint-item hint-locked" id="b2">
+          <div class="hint-header" onclick="openHint('b2')">
+            <div class="hint-num">2</div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Vorfaktor ausklammern</div>
+              <div class="hint-subtitle">Normalform aufschreiben und prüfen</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_b2"></i>
+          </div>
+          <div class="hint-body" id="body_b2">
+            <div class="hint-text" style="margin-bottom:10px;font-weight:500">Gib die Koeffizienten der Funktion V(x) = a·x² + b·x ein:</div>
+              <div class="check-row">
+                <label>Koeffizient a vor x² =</label>
+                <input type="number" id="ca" placeholder="?">
+              </div>
+              <div class="check-row">
+                <label>Koeffizient b vor x =</label>
+                <input type="number" id="cb" placeholder="?">
+              </div>
+              <button class="check-btn" onclick="checkB()">Prüfen</button>
+              <div class="feedback" id="fb1"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="unlock-btn" id="unlockB" onclick="unlockNext(1)" disabled>
+        <i class="ti ti-lock"></i> Alle Schritte öffnen, um Aufgabe 3 freizuschalten
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ TASK C ══════════ -->
+  <div class="task-panel" id="panel2">
+    <div class="card">
+      <div class="card-title">3 Scheitelpunktform durch quadratische Ergänzung</div>
+      <div class="card-desc">Forme V(x) = −7x² + 140x in die Scheitelpunktform V(x) = c·(x−d)² + e um.</div>
+
+      <div class="hint-list">
+        <div class="hint-item" id="c1">
+          <div class="hint-header" onclick="openHint('c1')">
+            <div class="hint-num">1</div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Koeffizient ausklammern</div>
+              <div class="hint-subtitle">−7 vor die Klammer ziehen</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_c1"></i>
+          </div>
+          <div class="hint-body" id="body_c1">
+            <div class="math-block">V(x) = −7 · (x² − 20x)</div>
+            <div class="hint-text" style="margin-top:6px">Probe: −7·x² = −7x² ✓ &nbsp; und &nbsp; −7·(−20x) = +140x ✓</div>
+          </div>
+        </div>
+
+        <div class="hint-item hint-locked" id="c2">
+          <div class="hint-header" onclick="openHint('c2')">
+            <div class="hint-num">2</div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Ergänzungsterm berechnen</div>
+              <div class="hint-subtitle">(Hälfte des x-Koeffizienten)²</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_c2"></i>
+          </div>
+          <div class="hint-body" id="body_c2">
+            <div class="hint-text">Nimm die Hälfte des Koeffizienten von x in der Klammer und quadriere:</div>
+            <div class="math-block">(−20 ÷ 2)² = (−10)² = 100</div>
+            <div class="hint-text" style="margin-top:6px">Addiere und subtrahiere 100 innerhalb der Klammer:</div>
+            <div class="math-block">V(x) = −7 · (x² − 20x + 100 − 100)</div>
+          </div>
+        </div>
+
+        <div class="hint-item hint-locked" id="c3">
+          <div class="hint-header" onclick="openHint('c3')">
+            <div class="hint-num">3</div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Binomische Formel anwenden</div>
+              <div class="hint-subtitle">x² − 20x + 100 = ?</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_c3"></i>
+          </div>
+          <div class="hint-body" id="body_c3">
+            <div class="hint-text">x² − 20x + 100 ist ein vollständiges Quadrat:</div>
+            <div class="math-block">x² − 20x + 100 = (x − 10)²</div>
+            <div class="hint-text" style="margin-top:6px">Einsetzen:</div>
+            <div class="math-block">V(x) = −7 · ((x − 10)² − 100)</div>
+          </div>
+        </div>
+
+        <div class="hint-item hint-locked" id="c4">
+          <div class="hint-header" onclick="openHint('c4')">
+            <div class="hint-num">4</div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Ausmultiplizieren → Scheitelpunktform</div>
+              <div class="hint-subtitle">Ergebnis ablesen</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_c4"></i>
+          </div>
+          <div class="hint-body" id="body_c4">
+            <div class="hint-text" style="margin-bottom:10px;font-weight:500">Trage Scheitelpunkt und maximales Volumen ein:</div>
+              <div class="check-row">
+                <label>Scheitelpunkt x<sub>S</sub> =</label>
+                <input type="number" id="cs_a" placeholder="cm">
+              </div>
+              <div class="check-row">
+                <label>V<sub>max</sub> =</label>
+                <input type="number" id="cs_v" placeholder="cm³">
+              </div>
+              <button class="check-btn" onclick="checkC()">Prüfen</button>
+              <div class="feedback" id="fb2"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="unlock-btn" id="unlockC" onclick="unlockNext(2)" disabled>
+        <i class="ti ti-lock"></i> Alle Schritte öffnen, um Aufgabe 4 freizuschalten
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ TASK D ══════════ -->
+  <div class="task-panel" id="panel3">
+    <div class="card">
+      <div class="card-title">4 Graphische Interpretation</div>
+      <div class="card-desc">Bewege den Regler und beobachte das Volumen. Lies den Scheitelpunkt direkt aus dem Graphen ab.</div>
+
+      <div class="slider-row">
+        <label>x =</label>
+        <input type="range" id="aSlider" min="0.5" max="19.5" step="0.5" value="10">
+        <span class="sval"><span id="aOut">10</span> cm</span>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Seite x</div><div class="metric-val" id="mA">10 cm</div></div>
+        <div class="metric"><div class="metric-label">Seite y = 20−x</div><div class="metric-val" id="mB">10 cm</div></div>
+        <div class="metric"><div class="metric-label">Volumen</div><div class="metric-val hi" id="mV">700 cm³</div></div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="pc" role="img" aria-label="Parabel V(x) = -7x² + 140x, Maximum bei S(10|700)">V(x) = −7x² + 140x, Maximum bei S(10|700).</canvas>
+      </div>
+
+      <div style="margin-top:1.25rem;display:flex;flex-direction:column;gap:10px">
+        <div class="hint-item" id="d1">
+          <div class="hint-header" onclick="openHint('d1')">
+            <div class="hint-num"><i class="ti ti-bulb" style="font-size:13px"></i></div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Was sagt der Scheitelpunkt aus?</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_d1"></i>
+          </div>
+          <div class="hint-body" id="body_d1">
+            <div class="hint-text">S(10 | 700) bedeutet: Bei <strong>x = y = 10 cm</strong> (quadratische Grundfläche!) ist das Volumen mit <strong>700 cm³</strong> am größten. Links und rechts davon wird die Schachtel kleiner entweder zu schmal oder zu breit.</div>
+          </div>
+        </div>
+        <div class="hint-item" id="d2">
+          <div class="hint-header" onclick="openHint('d2')">
+            <div class="hint-num"><i class="ti ti-arrows-left-right" style="font-size:13px"></i></div>
+            <div class="hint-title-wrap">
+              <div class="hint-title">Symmetrie der Parabel</div>
+            </div>
+            <i class="ti ti-chevron-down hint-chevron" id="ch_d2"></i>
+          </div>
+          <div class="hint-body" id="body_d2">
+            <div class="hint-text">Setze x = 4 und x = 16 ein beide liefern <strong>dasselbe Volumen</strong>. Die Parabel ist symmetrisch zur Achse x = 10. Das erklärt, warum „schmal" und „breit" gleich schlecht sind.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="complete-badge" id="completeBadge" style="display:none">
+        <i class="ti ti-circle-check" style="font-size:22px;color:var(--green)"></i>
+        <span>Alle Aufgaben abgeschlossen! Die optimale Schachtel ist 10 × 10 × 7 cm mit V = 700 cm³.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+const unlocked = [true, false, false, false];
+const openedHints = { a: new Set(), b: new Set(), c: new Set(), d: new Set() };
+const hintGroups = { 0: ['a1','a2','a3'], 1: ['b1','b2'], 2: ['c1','c2','c3','c4'], 3: ['d1','d2'] };
+const hintKeys   = { 0: 'a', 1: 'b', 2: 'c', 3: 'd' };
+let currentTask = 0;
+let chart = null;
+
+function updateProgress() {
+  const done = unlocked.filter(Boolean).length - 1;
+  const total = 4;
+  document.getElementById('progressFill').style.width = Math.round((done / total) * 100) + '%';
+}
+
+function goTask(n) {
+  if (!unlocked[n]) return;
+  currentTask = n;
+  document.querySelectorAll('.task-panel').forEach((p,i) => p.classList.toggle('active', i === n));
+  document.querySelectorAll('.tnav-btn').forEach((b,i) => b.classList.toggle('active', i === n));
+  if (n === 3) setTimeout(initChart, 80);
+}
+
+function openHint(id) {
+  const item = document.getElementById(id);
+  if (item.classList.contains('hint-locked')) return;
+  const body = document.getElementById('body_' + id);
+  const chev = document.getElementById('ch_' + id);
+  const isOpen = body.classList.toggle('open');
+  chev.classList.toggle('open', isOpen);
+
+  if (isOpen) {
+    const key = id[0];
+    openedHints[key].add(id);
+    checkUnlockReady(currentTask);
+    unlockNextHint(id);
+  }
+}
+
+function unlockNextHint(openedId) {
+  const task = currentTask;
+  const group = hintGroups[task];
+  const idx = group.indexOf(openedId);
+  if (idx >= 0 && idx + 1 < group.length) {
+    const nextId = group[idx + 1];
+    const nextItem = document.getElementById(nextId);
+    if (nextItem && nextItem.classList.contains('hint-locked')) {
+      nextItem.classList.remove('hint-locked');
+    }
+  }
+}
+
+function checkUnlockReady(taskIdx) {
+  const key = hintKeys[taskIdx];
+  const group = hintGroups[taskIdx];
+  const allOpen = group.every(id => openedHints[key].has(id));
+  const btn = document.getElementById(['unlockA','unlockB','unlockC','unlockD'][taskIdx]);
+  if (!btn) return;
+  if (allOpen) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-lock-open"></i> Aufgabe ' + ['B','C','D',''][taskIdx+1 < 4 ? taskIdx : taskIdx] + (taskIdx < 3 ? ' freischalten' : ' abschließen');
+  }
+}
+
+function unlockNext(taskIdx) {
+  if (taskIdx >= 3) {
+    document.getElementById('completeBadge').style.display = 'flex';
+    return;
+  }
+  const next = taskIdx + 1;
+  unlocked[next] = true;
+  const navBtn = document.getElementById('nav' + next);
+  navBtn.classList.remove('locked');
+  navBtn.querySelector('.lock-icon') && navBtn.querySelector('.lock-icon').remove();
+  updateProgress();
+  setTimeout(() => goTask(next), 200);
+}
+
+// Auto-unlock first hint in each task when opened
+function initTaskHints(taskIdx) {
+  const group = hintGroups[taskIdx];
+  if (group && group[0]) {
+    const first = document.getElementById(group[0]);
+    if (first) first.classList.remove('hint-locked');
+  }
+}
+[0,1,2,3].forEach(initTaskHints);
+
+// ── Chart ──
+function V(x) { return 7 * x * (20 - x); }
+
+function initChart() {
+  if (chart) return;
+  const canvas = document.getElementById('pc');
+  if (!canvas) return;
+  const labels = [], data = [];
+  for (let x = 0; x <= 20; x += 0.5) { labels.push(x.toFixed(1)); data.push(V(x)); }
+
+  chart = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { data, borderColor: '#1D9E75', borderWidth: 2.5, pointRadius: 0, fill: true, backgroundColor: 'rgba(29,158,117,0.08)', tension: 0.3 },
+        { data: labels.map(l => parseFloat(l) === 10 ? 700 : null), borderWidth: 0, pointRadius: 9, pointBackgroundColor: '#E24B4A', showLine: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: i => 'x = ' + i[0].label + ' cm', label: i => 'V = ' + Math.round(i[0].raw) + ' cm³' } } },
+      scales: {
+        x: { title: { display: true, text: 'x (cm)', color: '#888', font: { size: 11, family: "'DM Sans'" } }, grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { color: '#888', font: { size: 11 }, maxTicksLimit: 11 } },
+        y: { title: { display: true, text: 'V(a) (cm³)', color: '#888', font: { size: 11, family: "'DM Sans'" } }, grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { color: '#888', font: { size: 11 } } }
+      }
+    }
+  });
+
+  const slider = document.getElementById('aSlider');
+  function upd() {
+    const x = parseFloat(slider.value);
+    document.getElementById('aOut').textContent = x.toFixed(1);
+    document.getElementById('mA').textContent = x.toFixed(1) + ' cm';
+    document.getElementById('mB').textContent = (20 - x).toFixed(1) + ' cm';
+    document.getElementById('mV').textContent = Math.round(V(x)) + ' cm³';
+    const idx = Math.round(x / 0.5);
+    chart.data.datasets[1].data = labels.map((_, i) => i === idx ? V(x) : null);
+    chart.update('none');
+  }
+  slider.addEventListener('input', upd);
+  upd();
+
+  // Also unlock D hints
+  openedHints['d'].add('d1');
+  openedHints['d'].add('d2');
+}
+
+// ── Check functions ──
+function checkB() {
+  const ca = parseFloat(document.getElementById('ca').value);
+  const cb = parseFloat(document.getElementById('cb').value);
+  const fb = document.getElementById('fb1');
+  fb.className = 'feedback show';
+  if (Math.abs(ca + 7) < 0.1 && Math.abs(cb - 140) < 0.5) {
+    fb.classList.add('ok'); fb.textContent = '✓ Richtig! V(x) = −7x² + 140x. Der negative Koeffizient zeigt: Parabel nach unten → Maximum existiert!';
+  } else if (Math.abs(ca + 7) < 0.1) {
+    fb.classList.add('part'); fb.textContent = 'x²-Koeffizient stimmt! Überprüfe noch den x-Koeffizienten: 7 × 20 = ?';
+  } else if (Math.abs(cb - 140) < 0.5) {
+    fb.classList.add('part'); fb.textContent = 'x-Koeffizient stimmt! Beim x²-Term: 7 × (−x²) → welches Vorzeichen?';
+  } else {
+    fb.classList.add('no'); fb.textContent = 'Tipp: V = 7·(20x − x²) = 7·20·x − 7·x². Was ist 7·(−a²)?';
+  }
+}
+
+function checkC() {
+  const a = parseFloat(document.getElementById('cs_a').value);
+  const v = parseFloat(document.getElementById('cs_v').value);
+  const fb = document.getElementById('fb2');
+  fb.className = 'feedback show';
+  const aOk = Math.abs(a - 10) < 0.6, vOk = Math.abs(v - 700) < 5;
+  if (aOk && vOk) {
+    fb.classList.add('ok'); fb.textContent = '✓ Perfekt! S(10 | 700) die optimale Schachtel ist 10 × 10 × 7 cm mit V = 700 cm³.';
+    document.getElementById('unlockC').disabled = false;
+    document.getElementById('unlockC').innerHTML = '<i class="ti ti-lock-open"></i> Aufgabe D freischalten';
+  } else if (aOk) {
+    fb.classList.add('part'); fb.textContent = 'x = 10 cm stimmt! Berechne V(10) = −7·100 + 140·10 = ?';
+  } else if (vOk) {
+    fb.classList.add('part'); fb.textContent = 'V = 700 cm³ stimmt! Scheitelpunkt: a_S = −140 ÷ (2×(−7)) = ?';
+  } else {
+    fb.classList.add('no'); fb.textContent = 'Tipp: x_S = −d ÷ (2c) = −140 ÷ (2×(−7)) = −140 ÷ (−14) = ?';
+  }
+}
+
+updateProgress();
+</script>
+</body>
+</html>
